@@ -59,6 +59,7 @@ jobs:
             cibw_archs: x86_64
             platform_id: manylinux_x86_64
             manylinux_image: quay.io/pypa/manylinux2014_x86_64
+            cibw_environment_linux: PIP_CONSTRAINT=/tmp/numpy-constraints.txt
             AL_BACKEND_HDF5: AL_BACKEND_HDF5=ON
             AL_BACKEND_MDSPLUS: AL_BACKEND_MDSPLUS=OFF
             AL_BACKEND_UDA: AL_BACKEND_UDA=ON
@@ -367,6 +368,13 @@ jobs:
           CIBW_ARCHS: ${{ matrix.cibw_archs }}
           CIBW_MANYLINUX_X86_64_IMAGE: ${{ matrix.manylinux_image }}
           CIBW_MANYLINUX_AARCH64_IMAGE: ${{ matrix.manylinux_image }}
+          # FIXME: on manylinux_2_28, the ninja package seems to be too old, producing this error:
+          # ninja: error: build.ninja:826: multiple outputs aren't (yet?) supported by depslog; 
+          # bring this up on the mailing list if it affects you; for now, trying not to use ninja.
+          # Allow additional env vars to be set per-matrix item, see cibw_environment_linux above.
+          CIBW_ENVIRONMENT_LINUX: >
+            CMAKE_GENERATOR="Unix Makefiles"
+            ${{ matrix.cibw_environment_linux || '' }}
           CIBW_SKIP: "cp31?t-*"  # Skip free-threading builds (not supported yet)
 
           # Install system libraries
@@ -401,6 +409,7 @@ jobs:
               cmake -B build -H. -DCMAKE_BUILD_TYPE=Release -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_INSTALL_PREFIX=/usr/local -DBUILD_SHARED_LIBS=ON >&2;
               cmake --build build >&2;
               cmake --install build >&2;
+              echo 'numpy<2.5.1' >/tmp/numpy-constraints.txt >&2;
               cd /tmp >&2;
               wget https://sourceforge.net/projects/boost/files/boost/1.80.0/boost_1_80_0.tar.gz >&2;
               tar xzf boost_1_80_0.tar.gz >&2;
@@ -439,13 +448,6 @@ jobs:
             # cmake -G Ninja -B build . -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_INSTALL_LIBDIR:STRING=lib -DFMT_DOC:BOOL=OFF -DFMT_TEST:BOOL=OFF -DBUILD_SHARED_LIBS:BOOL=ON >&2 &&
             # cmake --build build --target install >&2 &&
             # cmake --install build >&2 && cd .. ;
-
-
-          # FIXME: on manylinux_2_28, the ninja package seems to be too old, producing this error:
-          # ninja: error: build.ninja:826: multiple outputs aren't (yet?) supported by depslog; bring this up on the mailing list if it affects you
-          # trying not to use ninja:
-          CIBW_ENVIRONMENT_LINUX: CMAKE_GENERATOR="Unix Makefiles"
-
           CIBW_CONFIG_SETTINGS: >
             cmake.define.${{ matrix.AL_BACKEND_HDF5 }}
             cmake.define.${{ matrix.AL_BACKEND_MDSPLUS }}
