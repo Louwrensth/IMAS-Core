@@ -68,6 +68,9 @@ jobs:
             # introduced the GCC 10.3 requirement, whereas this manylinux image is built with GCC 10.2.1.
             # See CIBW_BEFORE_ALL_LINUX below, where this constraints txt file is written.
             cibw_build_frontend: "build; args: --dependency-constraints-txt /tmp/numpy-constraints.txt"
+            cibw_environment_linux: >-
+              CMAKE_GENERATOR="Unix Makefiles"
+              PKG_CONFIG_PATH="/usr/local/lib64/pkgconfig:/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH"
             AL_BACKEND_HDF5: AL_BACKEND_HDF5=ON
             AL_BACKEND_MDSPLUS: AL_BACKEND_MDSPLUS=OFF
             AL_BACKEND_UDA: AL_BACKEND_UDA=ON
@@ -375,7 +378,7 @@ jobs:
           # FIXME: on manylinux_2_28, the ninja package seems to be too old, producing this error:
           # ninja: error: build.ninja:826: multiple outputs aren't (yet?) supported by depslog; 
           # bring this up on the mailing list if it affects you; for now, trying not to use ninja.
-          CIBW_ENVIRONMENT_LINUX: CMAKE_GENERATOR="Unix Makefiles"
+          CIBW_ENVIRONMENT_LINUX: ${{ matrix.cibw_environment_linux || 'CMAKE_GENERATOR="Unix Makefiles"' }}
           CIBW_SKIP: "cp31?t-*"  # Skip free-threading builds (not supported yet)
 
           # Install system libraries
